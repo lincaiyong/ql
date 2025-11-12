@@ -51,12 +51,13 @@ func (db *Database[T]) AddTable(baseTableName, tableName string, fields []string
 }
 
 func (db *Database[T]) Query(q string) ([]T, error) {
-	ret := regexp.MustCompile(`^from (.+) select (.+)$`).FindStringSubmatch(q)
-	if len(ret) != 3 {
+	ret := regexp.MustCompile(`^from (.+) (?:where (.+))? select (.+)$`).FindStringSubmatch(q)
+	if len(ret) != 4 {
 		return nil, fmt.Errorf("invalid query statement: %s", q)
 	}
 	from := ret[1]
-	select_ := ret[2]
+	where := ret[2]
+	select_ := ret[3]
 	fromTypeNames := make([][2]string, 0)
 	for _, d := range strings.Split(from, ",") {
 		s := strings.Fields(d)
@@ -65,7 +66,7 @@ func (db *Database[T]) Query(q string) ([]T, error) {
 		}
 		fromTypeNames = append(fromTypeNames, [2]string{s[0], s[1]})
 	}
-	log.InfoLog("%v %s", fromTypeNames, select_)
+	log.InfoLog("%v %s %s", fromTypeNames, where, select_)
 	tableName := fromTypeNames[0][0]
 	table := db.GetTable(tableName)
 	if table == nil {
@@ -120,15 +121,6 @@ type Record[T any] struct {
 }
 
 func main() {
-	// https://codeql.github.com/docs/codeql-language-guides/analyzing-data-flow-in-go/
-	//	q := `from Function osOpen, CallExpr call
-	//where
-	//  osOpen.hasQualifiedName("os", "Open") and
-	//  call.getTarget() = osOpen
-	//select call.getArgument(0)
-	//`
-	//	ret := ql.Query(q)
-	//	fmt.Println(ret)
 	var numbers []string
 	for i := 0; i < 50; i++ {
 		numbers = append(numbers, strconv.Itoa(i))
@@ -155,7 +147,7 @@ func main() {
 		}
 		return nil
 	})
-	ret, err := db.Query(`from EvenNumber n select n`)
+	ret, err := db.Query(`from EvenNumber n where n > 40 select n`)
 	if err != nil {
 		log.ErrorLog("fail to query: %v", err)
 		return
