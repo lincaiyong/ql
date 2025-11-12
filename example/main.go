@@ -11,6 +11,8 @@ import (
 func NewDatabase[T any](data []T) *Database[T] {
 	db := &Database[T]{
 		data:     data,
+		strs:     make([]string, 0),
+		strMap:   make(map[string]int),
 		tables:   make([]*Table[T], 0),
 		tableMap: make(map[string]*Table[T]),
 	}
@@ -25,8 +27,25 @@ func NewDatabase[T any](data []T) *Database[T] {
 
 type Database[T any] struct {
 	data     []T
+	strs     []string
+	strMap   map[string]int
 	tables   []*Table[T]
 	tableMap map[string]*Table[T]
+}
+
+func (db *Database[T]) GetString(i int) string {
+	return db.strs[i]
+}
+
+func (db *Database[T]) StoreString(s string) int {
+	if ret, ok := db.strMap[s]; ok {
+		return ret
+	} else {
+		ret = len(db.strs)
+		db.strs = append(db.strs, s)
+		db.strMap[s] = ret
+		return ret
+	}
 }
 
 func (db *Database[T]) GetTable(name string) *Table[T] {
@@ -107,17 +126,21 @@ func (t *Table[T]) AddRecord(r *Record[T]) {
 }
 
 func NewRecord[T any](table *Table[T], this int, data []string) *Record[T] {
+	si := make([]int, len(data))
+	for i, d := range data {
+		si[i] = table.db.StoreString(d)
+	}
 	return &Record[T]{
 		table: table,
 		this:  this,
-		data:  data,
+		data:  si,
 	}
 }
 
 type Record[T any] struct {
 	table *Table[T]
 	this  int
-	data  []string
+	data  []int
 }
 
 func main() {
