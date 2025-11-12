@@ -3,7 +3,9 @@ package main
 import (
 	"fmt"
 	"github.com/lincaiyong/log"
+	"regexp"
 	"strconv"
+	"strings"
 )
 
 func NewDatabase[T any](data []T) *Database[T] {
@@ -27,6 +29,10 @@ type Database[T any] struct {
 	tableMap map[string]*Table[T]
 }
 
+func (db *Database[T]) GetTable(name string) *Table[T] {
+	return db.tableMap[name]
+}
+
 func (db *Database[T]) AddTable(baseTableName, tableName string, fields []string, fn func(t T) []string) error {
 	baseTable, ok := db.tableMap[baseTableName]
 	if !ok {
@@ -44,9 +50,32 @@ func (db *Database[T]) AddTable(baseTableName, tableName string, fields []string
 	return nil
 }
 
-func (db *Database[T]) Query(q string) []T {
-
-	return nil
+func (db *Database[T]) Query(q string) ([]T, error) {
+	ret := regexp.MustCompile(`^from (.+) select (.+)$`).FindStringSubmatch(q)
+	if len(ret) != 3 {
+		return nil, fmt.Errorf("invalid query statement: %s", q)
+	}
+	from := ret[1]
+	select_ := ret[2]
+	fromTypeNames := make([][2]string, 0)
+	for _, d := range strings.Split(from, ",") {
+		s := strings.Fields(d)
+		if len(s) != 2 {
+			return nil, fmt.Errorf("invalid query statement: %s", q)
+		}
+		fromTypeNames = append(fromTypeNames, [2]string{s[0], s[1]})
+	}
+	log.InfoLog("%v %s", fromTypeNames, select_)
+	tableName := fromTypeNames[0][0]
+	table := db.GetTable(tableName)
+	if table == nil {
+		return nil, fmt.Errorf("table %s not found", select_)
+	}
+	result := make([]T, 0)
+	for _, r := range table.records {
+		result = append(result, db.data[r.this])
+	}
+	return result, nil
 }
 
 func NewTable[T any](db *Database[T], fields []string) *Table[T] {
@@ -126,9 +155,13 @@ func main() {
 		}
 		return nil
 	})
-	ret := db.Query(`from EvenNumber n where n > 6 select n`)
+	ret, err := db.Query(`from EvenNumber n select n`)
+	if err != nil {
+		log.ErrorLog("fail to query: %v", err)
+		return
+	}
 	for _, n := range ret {
-		log.InfoLog("%d", n)
+		log.InfoLog("%s", n)
 	}
 	log.InfoLog("done")
 }
