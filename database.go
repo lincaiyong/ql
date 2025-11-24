@@ -2,7 +2,6 @@ package ql
 
 import (
 	"fmt"
-	"github.com/lincaiyong/log"
 	"regexp"
 	"strings"
 )
@@ -15,7 +14,7 @@ func NewDatabase[T any](data []T) *Database[T] {
 		tables:   make([]*Table[T], 0),
 		tableMap: make(map[string]*Table[T]),
 	}
-	table := NewTable[T](db, nil)
+	table := NewTable[T]("", db, nil)
 	for i := range data {
 		table.AddRecord(NewRecord[T](table, i, nil))
 	}
@@ -56,7 +55,7 @@ func (db *Database[T]) AddTable(baseTableName, tableName string, fields []string
 	if !ok {
 		return fmt.Errorf("table %s not found", baseTableName)
 	}
-	table := NewTable[T](db, fields)
+	table := NewTable[T](tableName, db, fields)
 	db.tableMap[tableName] = table
 	db.tables = append(db.tables, table)
 	for _, record := range baseTable.records {
@@ -76,22 +75,24 @@ func (db *Database[T]) Query(q string) ([]T, error) {
 	from := ret[1]
 	where := ret[2]
 	select_ := ret[3]
-	fromTypeNames := make([][2]string, 0)
+	variables := make(map[string]*Table[T])
 	for _, d := range strings.Split(from, ",") {
 		s := strings.Fields(d)
 		if len(s) != 2 {
 			return nil, fmt.Errorf("invalid query statement: %s", q)
 		}
-		fromTypeNames = append(fromTypeNames, [2]string{s[0], s[1]})
+		table := db.GetTable(s[0])
+		if table == nil {
+			return nil, fmt.Errorf("table %s not found", s[0])
+		}
+		variables[s[1]] = table
 	}
-	log.InfoLog("%v %s %s", fromTypeNames, where, select_)
-	tableName := fromTypeNames[0][0]
-	table := db.GetTable(tableName)
-	if table == nil {
-		return nil, fmt.Errorf("table %s not found", select_)
+	records, err := eval[T](variables, where, select_)
+	if err != nil {
+		return nil, fmt.Errorf("fail to eval: %w", err)
 	}
 	result := make([]T, 0)
-	for _, r := range table.records {
+	for _, r := range records {
 		result = append(result, db.data[r.this])
 	}
 	return result, nil

@@ -172,30 +172,15 @@ func (t *Tokenizer) op() *Token {
 		} else {
 			type_ = TokenTypeOpNot
 		}
-	case '{':
-		t.forward()
-		type_ = TokenTypeOpLeftBrace
-	case '[':
-		t.forward()
-		type_ = TokenTypeOpLeftBracket
 	case '(':
 		t.forward()
 		type_ = TokenTypeOpLeftParen
 	case '-':
 		t.forward()
 		type_ = TokenTypeOpMinus
-	case '%':
-		t.forward()
-		type_ = TokenTypeOpPercent
 	case '+':
 		t.forward()
 		type_ = TokenTypeOpPlus
-	case '}':
-		t.forward()
-		type_ = TokenTypeOpRightBrace
-	case ']':
-		t.forward()
-		type_ = TokenTypeOpRightBracket
 	case ')':
 		t.forward()
 		type_ = TokenTypeOpRightParen

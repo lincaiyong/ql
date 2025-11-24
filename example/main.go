@@ -6,14 +6,18 @@ import (
 	"strconv"
 )
 
+type Entity struct {
+	num string
+}
+
 func main() {
-	var numbers []string
+	var entities []*Entity
 	for i := 0; i < 50; i++ {
-		numbers = append(numbers, strconv.Itoa(i))
+		entities = append(entities, &Entity{num: strconv.Itoa(i)})
 	}
-	db := ql.NewDatabase[string](numbers)
-	err := db.AddTable("", "OddNumber", nil, func(t string) []string {
-		if i, _ := strconv.Atoi(t); i%2 == 1 {
+	db := ql.NewDatabase[*Entity](entities)
+	err := db.AddTable("", "OddNumber", nil, func(t *Entity) []string {
+		if i, _ := strconv.Atoi(t.num); i%2 == 1 {
 			return []string{}
 		}
 		return nil
@@ -21,19 +25,19 @@ func main() {
 	if err != nil {
 		log.ErrorLog("fail to add table: %v", err)
 	}
-	err = db.AddTable("", "EvenNumber", []string{"string"}, func(t string) []string {
-		if i, _ := strconv.Atoi(t); i%2 == 0 {
-			return []string{t + "_string"}
+	err = db.AddTable("", "EvenNumber", []string{"string"}, func(t *Entity) []string {
+		if i, _ := strconv.Atoi(t.num); i%2 == 0 {
+			return []string{t.num + "_string"}
 		}
 		return nil
 	})
-	err = db.AddTable("", "DividableBy4", nil, func(t string) []string {
-		if i, _ := strconv.Atoi(t); i%2 == 0 {
+	err = db.AddTable("", "DividableBy4", nil, func(t *Entity) []string {
+		if i, _ := strconv.Atoi(t.num); i%2 == 0 {
 			return []string{}
 		}
 		return nil
 	})
-	ret, err := db.Query(`from EvenNumber n where n > 40 select n`)
+	ret, err := db.Query(`from EvenNumber n, DividableBy4 d where n.num > 40 and n in d select n`)
 	if err != nil {
 		log.ErrorLog("fail to query: %v", err)
 		return

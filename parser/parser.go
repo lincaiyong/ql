@@ -30,26 +30,7 @@ type Parser struct {
 }
 
 func (p *Parser) expr() *Node {
-	return p.ternary()
-}
-
-func (p *Parser) ternary() *Node {
-	pos := p.pos
-	if condition := p.binary(); condition != nil {
-		if p.expect("?") != nil {
-			if lhs := p.binary(); lhs != nil {
-				if p.expect(":") != nil {
-					if rhs := p.binary(); rhs != nil {
-						return NewTernaryNode(condition, lhs, rhs)
-					}
-				}
-			}
-		} else {
-			return condition
-		}
-	}
-	p.reset(pos)
-	return nil
+	return p.binary()
 }
 
 func (p *Parser) binary() *Node {
@@ -192,15 +173,6 @@ func (p *Parser) primary() *Node {
 				}
 			}
 			p.reset(tmp)
-			if p.expect("[") != nil {
-				if x := p.expr(); x != nil {
-					if p.expect("]") != nil {
-						lhs = NewIndexNode(lhs, x)
-						continue
-					}
-				}
-			}
-			p.reset(tmp)
 			if p.expect(".") != nil {
 				if x := p.expect(TokenTypeIdent); x != nil {
 					lhs = NewSelectorNode(lhs, x)
@@ -240,50 +212,7 @@ func (p *Parser) atom() *Node {
 		if p.expect(")") != nil {
 			return NewParenNode(n)
 		}
-	} else if p.expect("[") != nil {
-		var items []*Node
-		n := p.expr()
-		for n != nil {
-			items = append(items, n)
-			if p.expect(",") == nil {
-				break
-			}
-			n = p.expr()
-		}
-		if p.expect("]") != nil {
-			return NewArrayNode(items)
-		}
-		p.reset(pos)
-		return nil
-	} else if p.expect("{") != nil {
-		var items []*Node
-		n := p.pair()
-		for n != nil {
-			items = append(items, n)
-			if p.expect(",") == nil {
-				break
-			}
-			n = p.pair()
-		}
-		if p.expect("}") != nil {
-			return NewObjectNode(items)
-		}
-		p.reset(pos)
-		return nil
 	}
-	return nil
-}
-
-func (p *Parser) pair() *Node {
-	pos := p.pos
-	if k := p.expect(TokenTypeIdent); k != nil {
-		if p.expect(":") != nil {
-			if v := p.expr(); v != nil {
-				return NewPairNode(k, v)
-			}
-		}
-	}
-	p.reset(pos)
 	return nil
 }
 

@@ -1,11 +1,12 @@
 package ql
 
-func NewTable[T any](db *Database[T], fields []string) *Table[T] {
+func NewTable[T any](name string, db *Database[T], fields []string) *Table[T] {
 	fieldMap := make(map[string]int, len(fields))
 	for i, field := range fields {
 		fieldMap[field] = i
 	}
 	return &Table[T]{
+		name:      name,
 		db:        db,
 		fields:    fields,
 		fieldMap:  fieldMap,
@@ -15,6 +16,7 @@ func NewTable[T any](db *Database[T], fields []string) *Table[T] {
 }
 
 type Table[T any] struct {
+	name      string
 	db        *Database[T]
 	fields    []string
 	fieldMap  map[string]int

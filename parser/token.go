@@ -31,16 +31,11 @@ const TokenTypeOpPlus = "+"
 
 const TokenTypeOpSlash = "/"
 const TokenTypeOpStar = "*"
-const TokenTypeOpPercent = "%"
 
 // unary
 
 const TokenTypeOpNot = "!"
 
-const TokenTypeOpLeftBrace = "{"
-const TokenTypeOpRightBrace = "}"
-const TokenTypeOpLeftBracket = "["
-const TokenTypeOpRightBracket = "]"
 const TokenTypeOpLeftParen = "("
 const TokenTypeOpRightParen = ")"
 
