@@ -3,21 +3,24 @@ package main
 import (
 	"github.com/lincaiyong/log"
 	"github.com/lincaiyong/ql"
-	"strconv"
 )
 
 type Entity struct {
-	num string
+	num int
 }
 
 func main() {
 	var entities []*Entity
-	for i := 0; i < 50; i++ {
-		entities = append(entities, &Entity{num: strconv.Itoa(i)})
+	for i := 0; i < 100; i++ {
+		entities = append(entities, &Entity{num: i})
 	}
-	db := ql.NewDatabase[*Entity](entities)
-	err := db.AddTable("", "OddNumber", nil, func(t *Entity) []string {
-		if i, _ := strconv.Atoi(t.num); i%2 == 1 {
+	db := ql.NewDatabase[Entity](entities)
+	tbl := db.GetTable("")
+	tbl.Define("num", func(e *Entity) *ql.Value {
+		return ql.NewIntValue(e.num)
+	})
+	_, err := db.AddTable("", "OddNumber", nil, func(t *Entity) []string {
+		if t.num%2 == 1 {
 			return []string{}
 		}
 		return nil
@@ -25,25 +28,25 @@ func main() {
 	if err != nil {
 		log.ErrorLog("fail to add table: %v", err)
 	}
-	err = db.AddTable("", "EvenNumber", []string{"string"}, func(t *Entity) []string {
-		if i, _ := strconv.Atoi(t.num); i%2 == 0 {
-			return []string{t.num + "_string"}
-		}
-		return nil
-	})
-	err = db.AddTable("", "DividableBy4", nil, func(t *Entity) []string {
-		if i, _ := strconv.Atoi(t.num); i%2 == 0 {
+	_, err = db.AddTable("", "EvenNumber", []string{"string"}, func(t *Entity) []string {
+		if t.num%2 == 0 {
 			return []string{}
 		}
 		return nil
 	})
-	ret, err := db.Query(`from EvenNumber n, DividableBy4 d where n.num > 40 and n in d select n`)
+	_, err = db.AddTable("", "DividableBy4", nil, func(t *Entity) []string {
+		if t.num%2 == 0 {
+			return []string{}
+		}
+		return nil
+	})
+	ret, err := db.Query(`select EvenNumber n where n.num > 40 and n.num <= 50`)
 	if err != nil {
 		log.ErrorLog("fail to query: %v", err)
 		return
 	}
 	for _, n := range ret {
-		log.InfoLog("%s", n)
+		log.InfoLog("%d", n.num)
 	}
 	log.InfoLog("done")
 }

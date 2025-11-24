@@ -6,16 +6,16 @@ import (
 	"strings"
 )
 
-func NewDatabase[T any](data []T) *Database[T] {
+func NewDatabase[T any](entities []*T) *Database[T] {
 	db := &Database[T]{
-		data:     data,
+		entities: entities,
 		strs:     make([]string, 0),
 		strMap:   make(map[string]int),
 		tables:   make([]*Table[T], 0),
 		tableMap: make(map[string]*Table[T]),
 	}
-	table := NewTable[T]("", db, nil)
-	for i := range data {
+	table := NewTable[T]("", db, nil, nil)
+	for i := range entities {
 		table.AddRecord(NewRecord[T](table, i, nil))
 	}
 	db.tableMap[""] = table
@@ -24,7 +24,7 @@ func NewDatabase[T any](data []T) *Database[T] {
 }
 
 type Database[T any] struct {
-	data     []T
+	entities []*T
 	strs     []string
 	strMap   map[string]int
 	tables   []*Table[T]
@@ -50,50 +50,46 @@ func (db *Database[T]) GetTable(name string) *Table[T] {
 	return db.tableMap[name]
 }
 
-func (db *Database[T]) AddTable(baseTableName, tableName string, fields []string, fn func(t T) []string) error {
+func (db *Database[T]) AddTable(baseTableName, tableName string, fields []string, fn func(t *T) []string) (*Table[T], error) {
 	baseTable, ok := db.tableMap[baseTableName]
 	if !ok {
-		return fmt.Errorf("table %s not found", baseTableName)
+		return nil, fmt.Errorf("table %s not found", baseTableName)
 	}
-	table := NewTable[T](tableName, db, fields)
+	table := NewTable[T](tableName, db, fields, baseTable.getters)
 	db.tableMap[tableName] = table
 	db.tables = append(db.tables, table)
 	for _, record := range baseTable.records {
-		if ret := fn(db.data[record.this]); ret != nil {
-			r := NewRecord[T](table, record.this, ret)
+		if ret := fn(db.entities[record.id]); ret != nil {
+			r := NewRecord[T](table, record.id, ret)
 			table.AddRecord(r)
 		}
 	}
-	return nil
+	return table, nil
 }
 
-func (db *Database[T]) Query(q string) ([]T, error) {
-	ret := regexp.MustCompile(`^from (.+) (?:where (.+))? select (.+)$`).FindStringSubmatch(q)
-	if len(ret) != 4 {
+func (db *Database[T]) Query(q string) ([]*T, error) {
+	ret := regexp.MustCompile(`^select (.+?) (?:where (.+))?$`).FindStringSubmatch(q)
+	if len(ret) != 3 {
 		return nil, fmt.Errorf("invalid query statement: %s", q)
 	}
-	from := ret[1]
+	select_ := ret[1]
 	where := ret[2]
-	select_ := ret[3]
-	variables := make(map[string]*Table[T])
-	for _, d := range strings.Split(from, ",") {
-		s := strings.Fields(d)
-		if len(s) != 2 {
-			return nil, fmt.Errorf("invalid query statement: %s", q)
-		}
-		table := db.GetTable(s[0])
-		if table == nil {
-			return nil, fmt.Errorf("table %s not found", s[0])
-		}
-		variables[s[1]] = table
+	s := strings.Fields(select_)
+	if len(s) != 2 {
+		return nil, fmt.Errorf("invalid query statement: %s", q)
 	}
-	records, err := eval[T](variables, where, select_)
+	table := db.GetTable(s[0])
+	if table == nil {
+		return nil, fmt.Errorf("table %s not found", s[0])
+	}
+	varName := s[1]
+	records, err := eval[T](table, varName, where)
 	if err != nil {
 		return nil, fmt.Errorf("fail to eval: %w", err)
 	}
-	result := make([]T, 0)
+	result := make([]*T, 0)
 	for _, r := range records {
-		result = append(result, db.data[r.this])
+		result = append(result, db.entities[r.id])
 	}
 	return result, nil
 }

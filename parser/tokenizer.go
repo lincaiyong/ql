@@ -130,18 +130,6 @@ func (t *Tokenizer) op() *Token {
 	var type_ string
 	start := t.pos
 	switch t.la {
-	case '&':
-		t.forward()
-		if t.la == '&' {
-			t.forward()
-			type_ = TokenTypeOpAndAnd
-		}
-	case '|':
-		t.forward()
-		if t.la == '|' {
-			t.forward()
-			type_ = TokenTypeOpBarBar
-		}
 	case '=':
 		t.forward()
 		if t.la == '=' {
@@ -175,24 +163,9 @@ func (t *Tokenizer) op() *Token {
 	case '(':
 		t.forward()
 		type_ = TokenTypeOpLeftParen
-	case '-':
-		t.forward()
-		type_ = TokenTypeOpMinus
-	case '+':
-		t.forward()
-		type_ = TokenTypeOpPlus
 	case ')':
 		t.forward()
 		type_ = TokenTypeOpRightParen
-	case '/':
-		t.forward()
-		type_ = TokenTypeOpSlash
-	case '*':
-		t.forward()
-		type_ = TokenTypeOpStar
-	case ',':
-		t.forward()
-		type_ = TokenTypeOpComma
 	case '.':
 		t.forward()
 		type_ = TokenTypeOpDot

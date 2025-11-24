@@ -5,37 +5,14 @@ const TokenTypeWhitespace = "whitespace"
 const TokenTypeIdent = "ident"
 const TokenTypeNumber = "number"
 const TokenTypeString = "string"
-const TokenTypeOpComma = ","
 const TokenTypeOpDot = "."
-
-// compare binary
-
 const TokenTypeOpEqualEqual = "=="
 const TokenTypeOpNotEqual = "!="
 const TokenTypeOpGreaterEqual = ">="
 const TokenTypeOpLessEqual = "<="
 const TokenTypeOpGreater = ">"
 const TokenTypeOpLess = "<"
-
-// logical binary
-
-const TokenTypeOpAndAnd = "&&"
-const TokenTypeOpBarBar = "||"
-
-// sum binary
-
-const TokenTypeOpMinus = "-"
-const TokenTypeOpPlus = "+"
-
-// term binary
-
-const TokenTypeOpSlash = "/"
-const TokenTypeOpStar = "*"
-
-// unary
-
 const TokenTypeOpNot = "!"
-
 const TokenTypeOpLeftParen = "("
 const TokenTypeOpRightParen = ")"
 

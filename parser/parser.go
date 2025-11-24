@@ -30,21 +30,17 @@ type Parser struct {
 }
 
 func (p *Parser) expr() *Node {
-	return p.binary()
+	return p.logicalOrBinary()
 }
 
-func (p *Parser) binary() *Node {
-	return p.compareBinary()
-}
-
-func (p *Parser) compareBinary() *Node {
+func (p *Parser) logicalOrBinary() *Node {
 	pos := p.pos
 	var lhs *Node
-	if lhs = p.logicalBinary(); lhs != nil {
+	if lhs = p.logicalAndBinary(); lhs != nil {
 		for {
 			tmp := p.pos
-			if op := p.expectOp("==", "!=", ">=", ">", "<=", "<"); op != nil {
-				if rhs := p.logicalBinary(); rhs != nil {
+			if op := p.expect("or"); op != nil {
+				if rhs := p.logicalAndBinary(); rhs != nil {
 					lhs = NewBinaryNode(op, lhs, rhs)
 					continue
 				}
@@ -60,59 +56,13 @@ func (p *Parser) compareBinary() *Node {
 	return nil
 }
 
-func (p *Parser) logicalBinary() *Node {
-	pos := p.pos
-	var lhs *Node
-	if lhs = p.sumBinary(); lhs != nil {
-		for {
-			tmp := p.pos
-			if op := p.expectOp("==", "!=", ">=", ">", "<=", "<"); op != nil {
-				if rhs := p.sumBinary(); rhs != nil {
-					lhs = NewBinaryNode(op, lhs, rhs)
-					continue
-				}
-			}
-			p.reset(tmp)
-			break
-		}
-	}
-	if lhs != nil {
-		return lhs
-	}
-	p.reset(pos)
-	return nil
-}
-
-func (p *Parser) sumBinary() *Node {
-	pos := p.pos
-	var lhs *Node
-	if lhs = p.termBinary(); lhs != nil {
-		for {
-			tmp := p.pos
-			if op := p.expectOp("+", "-"); op != nil {
-				if rhs := p.termBinary(); rhs != nil {
-					lhs = NewBinaryNode(op, lhs, rhs)
-					continue
-				}
-			}
-			p.reset(tmp)
-			break
-		}
-	}
-	if lhs != nil {
-		return lhs
-	}
-	p.reset(pos)
-	return nil
-}
-
-func (p *Parser) termBinary() *Node {
+func (p *Parser) logicalAndBinary() *Node {
 	pos := p.pos
 	var lhs *Node
 	if lhs = p.unary(); lhs != nil {
 		for {
 			tmp := p.pos
-			if op := p.expectOp("*", "/", "%"); op != nil {
+			if op := p.expect("and"); op != nil {
 				if rhs := p.unary(); rhs != nil {
 					lhs = NewBinaryNode(op, lhs, rhs)
 					continue
@@ -140,11 +90,34 @@ func (p *Parser) expectOp(ops ...string) *Token {
 
 func (p *Parser) unary() *Node {
 	if op := p.expectOp("-", "!"); op != nil {
-		if x := p.primary(); x != nil {
+		if x := p.compareBinary(); x != nil {
 			return NewUnaryNode(op, x)
 		}
 	}
-	return p.primary()
+	return p.compareBinary()
+}
+
+func (p *Parser) compareBinary() *Node {
+	pos := p.pos
+	var lhs *Node
+	if lhs = p.primary(); lhs != nil {
+		for {
+			tmp := p.pos
+			if op := p.expectOp("==", "!=", ">=", ">", "<=", "<"); op != nil {
+				if rhs := p.primary(); rhs != nil {
+					lhs = NewBinaryNode(op, lhs, rhs)
+					continue
+				}
+			}
+			p.reset(tmp)
+			break
+		}
+	}
+	if lhs != nil {
+		return lhs
+	}
+	p.reset(pos)
+	return nil
 }
 
 func (p *Parser) primary() *Node {
