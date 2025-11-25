@@ -8,7 +8,7 @@ import (
 
 func main() {
 	var entities []*parser.Node
-	expr := "a.op == '+' and a.lhs.code == 'x'"
+	expr := "a.op == '+' and a.lhs.code != 'x'"
 	tokens, err := parser.Tokenize(expr)
 	if err != nil {
 		log.ErrorLog("%v", err)
@@ -24,11 +24,14 @@ func main() {
 	})
 	type Entity = parser.Node
 	db := ql.NewDatabase[Entity](entities)
-	tbl := db.GetTable("")
+	tbl := db.GetBaseTable()
 	tbl.Define("op", func(e *Entity) *ql.Value {
 		return ql.NewStringValue(e.Op())
 	})
-	_, err = db.AddTable("", "BinaryExpr", nil, func(t *Entity) []string {
+	tbl.Define("type", func(e *Entity) *ql.Value {
+		return ql.NewStringValue(e.Type())
+	})
+	_, err = db.AddTable("Entity", "BinaryExpr", nil, func(t *Entity) []string {
 		if t.Type() == parser.NodeTypeBinary {
 			return []string{}
 		}
@@ -38,7 +41,7 @@ func main() {
 		log.ErrorLog("fail to add table: %v", err)
 		return
 	}
-	_, err = db.AddTable("", "UnaryExpr", nil, func(t *Entity) []string {
+	_, err = db.AddTable("Entity", "UnaryExpr", nil, func(t *Entity) []string {
 		if t.Type() == parser.NodeTypeUnary {
 			return []string{}
 		}
@@ -48,13 +51,13 @@ func main() {
 		log.ErrorLog("fail to add table: %v", err)
 		return
 	}
-	ret, err := db.Query(`select BinaryExpr n where n.op == 'and'`)
+	ret, err := db.Query(`select Entity n where n.type == 'binary' and n.op == '!='`)
 	if err != nil {
 		log.ErrorLog("fail to query: %v", err)
 		return
 	}
 	for _, n := range ret {
-		log.InfoLog("%s", n.Op())
+		log.InfoLog("%s", n.Dump())
 	}
 	log.InfoLog("done")
 }

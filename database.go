@@ -14,11 +14,11 @@ func NewDatabase[T any](entities []*T) *Database[T] {
 		tables:   make([]*Table[T], 0),
 		tableMap: make(map[string]*Table[T]),
 	}
-	table := NewTable[T]("", db, nil, nil)
+	table := NewTable[T]("Entity", db, nil, nil)
 	for i := range entities {
 		table.AddRecord(NewRecord[T](table, i, nil))
 	}
-	db.tableMap[""] = table
+	db.tableMap["Entity"] = table
 	db.tables = append(db.tables, table)
 	return db
 }
@@ -44,6 +44,10 @@ func (db *Database[T]) StoreString(s string) int {
 		db.strMap[s] = ret
 		return ret
 	}
+}
+
+func (db *Database[T]) GetBaseTable() *Table[T] {
+	return db.tableMap["Entity"]
 }
 
 func (db *Database[T]) GetTable(name string) *Table[T] {

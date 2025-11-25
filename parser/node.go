@@ -1,5 +1,10 @@
 package parser
 
+import (
+	"fmt"
+	"strings"
+)
+
 const NodeTypeIdent = "ident"
 const NodeTypeNumber = "number"
 const NodeTypeString = "string"
@@ -116,4 +121,29 @@ func (n *Node) Visit(f func(node *Node)) {
 	for _, t := range n.s {
 		t.Visit(f)
 	}
+}
+
+func (n *Node) Dump() string {
+	var sb strings.Builder
+	sb.WriteString(fmt.Sprintf("type=%s ", n.type_))
+	if n.token != nil {
+		sb.WriteString(fmt.Sprintf("token='%s' ", n.token.Text))
+	}
+	if n.op != nil {
+		sb.WriteString(fmt.Sprintf("op='%s' ", n.op.Text))
+	}
+	if n.x != nil {
+		sb.WriteString(fmt.Sprintf("x=(%s) ", n.x.Dump()))
+	}
+	if n.y != nil {
+		sb.WriteString(fmt.Sprintf("y=(%s) ", n.y.Dump()))
+	}
+	if len(n.s) > 0 {
+		sb.WriteString("s=[")
+		for _, t := range n.s {
+			sb.WriteString(fmt.Sprintf("(%s) ", t.Dump()))
+		}
+		sb.WriteString("]")
+	}
+	return strings.TrimSpace(sb.String())
 }
