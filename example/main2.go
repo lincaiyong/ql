@@ -48,7 +48,7 @@ func main() {
 		log.ErrorLog("fail to add table: %v", err)
 		return
 	}
-	ret, err := db.Query(`select BinaryExpr n`)
+	ret, err := db.Query(`select BinaryExpr n where n.op == 'and'`)
 	if err != nil {
 		log.ErrorLog("fail to query: %v", err)
 		return

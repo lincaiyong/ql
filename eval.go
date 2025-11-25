@@ -5,6 +5,7 @@ import (
 	"github.com/lincaiyong/log"
 	"github.com/lincaiyong/ql/parser"
 	"strconv"
+	"strings"
 )
 
 func eval[T any](table *Table[T], varName, where string) (result []*Record[T], err error) {
@@ -97,7 +98,9 @@ func (v *Evaluator[T]) EvalSet(node *parser.Node, all []*Record[T]) []*Record[T]
 			}
 			result := make([]*Record[T], 0, len(all))
 			for _, record := range all {
-				if v.compare(node.Op(), lhs(record.Entity()), rhs(record.Entity())) {
+				lhsValue := lhs(record.Entity())
+				rhsValue := rhs(record.Entity())
+				if v.compare(node.Op(), lhsValue, rhsValue) {
 					result = append(result, record)
 				}
 			}
@@ -128,7 +131,9 @@ func (v *Evaluator[T]) EvalValue(node *parser.Node) func(*T) *Value {
 		}
 	} else if node.Type() == parser.NodeTypeString {
 		return func(entity *T) *Value {
-			return NewStringValue(node.String())
+			s := strings.Trim(node.String(), "'")
+			s = strings.ReplaceAll(s, "\\'", "'")
+			return NewStringValue(s)
 		}
 	} else if node.Type() == parser.NodeTypeNumber {
 		return func(entity *T) *Value {
@@ -162,5 +167,13 @@ func (v *Evaluator[T]) compare(op string, lhs, rhs *Value) bool {
 			return false
 		}
 	}
-	return true
+	if lhs.type_ == ValueTypeString {
+		if op == "==" {
+			return lhs.StringValue() == rhs.StringValue()
+		} else if op == "!=" {
+			return lhs.StringValue() != rhs.StringValue()
+		}
+	}
+	log.FatalLog("invalid op %s", op)
+	return false
 }

@@ -157,8 +157,6 @@ func (t *Tokenizer) op() *Token {
 		if t.la == '=' {
 			t.forward()
 			type_ = TokenTypeOpNotEqual
-		} else {
-			type_ = TokenTypeOpNot
 		}
 	case '(':
 		t.forward()

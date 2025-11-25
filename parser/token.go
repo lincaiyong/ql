@@ -12,7 +12,6 @@ const TokenTypeOpGreaterEqual = ">="
 const TokenTypeOpLessEqual = "<="
 const TokenTypeOpGreater = ">"
 const TokenTypeOpLess = "<"
-const TokenTypeOpNot = "!"
 const TokenTypeOpLeftParen = "("
 const TokenTypeOpRightParen = ")"
 
