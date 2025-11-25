@@ -68,7 +68,7 @@ func (db *Database[T]) AddTable(baseTableName, tableName string, fields []string
 }
 
 func (db *Database[T]) Query(q string) ([]*T, error) {
-	ret := regexp.MustCompile(`^select (.+?) (?:where (.+))?$`).FindStringSubmatch(q)
+	ret := regexp.MustCompile(`^select (.+?)(?:where (.+))?$`).FindStringSubmatch(q)
 	if len(ret) != 3 {
 		return nil, fmt.Errorf("invalid query statement: %s", q)
 	}

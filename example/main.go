@@ -5,11 +5,10 @@ import (
 	"github.com/lincaiyong/ql"
 )
 
-type Entity struct {
-	num int
-}
-
 func main() {
+	type Entity struct {
+		num int
+	}
 	var entities []*Entity
 	for i := 0; i < 100; i++ {
 		entities = append(entities, &Entity{num: i})

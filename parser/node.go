@@ -104,3 +104,16 @@ func (n *Node) String() string {
 func (n *Node) Op() string {
 	return n.op.Text
 }
+
+func (n *Node) Visit(f func(node *Node)) {
+	f(n)
+	if n.x != nil {
+		n.x.Visit(f)
+	}
+	if n.y != nil {
+		n.y.Visit(f)
+	}
+	for _, t := range n.s {
+		t.Visit(f)
+	}
+}

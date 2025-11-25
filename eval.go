@@ -13,6 +13,9 @@ func eval[T any](table *Table[T], varName, where string) (result []*Record[T], e
 			err = r.(error)
 		}
 	}()
+	if where == "" {
+		return table.Records(), nil
+	}
 	node, err := parse(where)
 	if err != nil {
 		return nil, err
